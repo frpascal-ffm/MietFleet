@@ -1,8 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/Card"
 import { Badge } from "@/src/components/ui/Badge"
 import { ArrowUpRight, ArrowDownRight, TrendingUp, AlertCircle, Car, Euro, Users } from "lucide-react"
+import { useFahrten } from "@/src/context/FahrtenContext"
 
 export function Dashboard() {
+  const { fahrten } = useFahrten()
+
+  // Calculate fahrten without price
+  const fahrtenOhnePreis = fahrten.filter(f => f.status === "erledigt" && !f.price).length
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -112,13 +118,15 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900">12 Fahrten ohne Preis</p>
-                  <p className="text-xs text-amber-700 mt-1">Bitte Preise nachtragen, um Umsatz zu berechnen.</p>
+              {fahrtenOhnePreis > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <AlertCircle className="mt-0.5 h-5 w-5 text-amber-600" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-900">{fahrtenOhnePreis} Fahrten ohne Preis</p>
+                    <p className="text-xs text-amber-700 mt-1">Bitte Preise nachtragen, um Umsatz zu berechnen.</p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
                 <AlertCircle className="mt-0.5 h-5 w-5 text-red-600" />
                 <div>

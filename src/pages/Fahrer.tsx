@@ -1,22 +1,56 @@
-import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/Table"
 import { Badge } from "@/src/components/ui/Badge"
 import { Button } from "@/src/components/ui/Button"
-import { Input } from "@/src/components/ui/Input"
 import { Plus, Users } from "lucide-react"
-import { Sheet } from "@/src/components/ui/Sheet"
+import { useData } from "@/src/context/DataContext"
 
 export function Fahrer() {
   const navigate = useNavigate()
-  const [isNewOpen, setIsNewOpen] = useState(false)
+  const { fahrer, fahrten, fahrzeuge, plattformUmsaetze } = useData()
+
+  const driverStats = fahrer.map(driver => {
+    const driverFahrten = fahrten.filter(f => f.driverId === driver.id)
+    const completedFahrten = driverFahrten.filter(f => f.status === 'erledigt')
+    
+    const ownRevenue = completedFahrten
+      .filter(f => f.price)
+      .reduce((sum, f) => sum + parseFloat(f.price || "0"), 0)
+
+    const platformRevenue = plattformUmsaetze
+      .filter(p => p.driverId === driver.id)
+      .reduce((sum, p) => sum + p.amount, 0)
+
+    const totalRevenue = ownRevenue + platformRevenue
+
+    const defaultCar = fahrzeuge.find(c => c.id === driver.defaultCarId)
+
+    let perf = "Niedrig"
+    if (totalRevenue > 4000) perf = "Hoch"
+    else if (totalRevenue > 2000) perf = "Mittel"
+
+    return {
+      ...driver,
+      trips: completedFahrten.length,
+      revenue: totalRevenue,
+      carName: defaultCar ? defaultCar.name : "-",
+      perf
+    }
+  })
+
+  const activeDriversCount = fahrer.filter(d => d.status === 'aktiv').length
+  const totalRevenueAll = driverStats.reduce((sum, d) => sum + d.revenue, 0)
+  const totalTripsAll = driverStats.reduce((sum, d) => sum + d.trips, 0)
+
+  const avgRevenue = fahrer.length > 0 ? totalRevenueAll / fahrer.length : 0
+  const avgTrips = fahrer.length > 0 ? Math.round(totalTripsAll / fahrer.length) : 0
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Fahrer</h1>
-        <Button onClick={() => setIsNewOpen(true)}>
+        <Button onClick={() => navigate("/fahrer/neu")}>
           <Plus className="mr-2 h-4 w-4" />
           Neuer Fahrer
         </Button>
@@ -28,8 +62,8 @@ export function Fahrer() {
             <CardTitle className="text-sm font-medium text-gray-500">Aktive Fahrer</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">12</div>
-            <p className="text-xs text-brand-600 mt-1">Laufender Monat</p>
+            <div className="text-2xl font-bold text-gray-900">{activeDriversCount}</div>
+            <p className="text-xs text-brand-600 mt-1">Alle im Einsatz</p>
           </CardContent>
         </Card>
         <Card>
@@ -37,7 +71,7 @@ export function Fahrer() {
             <CardTitle className="text-sm font-medium text-gray-500">Ø Umsatz pro Fahrer</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">3.769 €</div>
+            <div className="text-2xl font-bold text-gray-900">{avgRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-gray-500 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
@@ -46,7 +80,7 @@ export function Fahrer() {
             <CardTitle className="text-sm font-medium text-gray-500">Ø Fahrten pro Fahrer</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">84</div>
+            <div className="text-2xl font-bold text-gray-900">{avgTrips}</div>
             <p className="text-xs text-gray-500 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
@@ -69,13 +103,8 @@ export function Fahrer() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                { id: 1, name: "Max Müller", status: "Aktiv", car: "M-AB 1234", trips: 120, rev: "5.450 €", perf: "Hoch" },
-                { id: 2, name: "Anna Schmidt", status: "Aktiv", car: "M-XY 9876", trips: 95, rev: "4.890 €", perf: "Hoch" },
-                { id: 3, name: "Tom Weber", status: "Aktiv", car: "M-ZZ 5555", trips: 80, rev: "3.100 €", perf: "Mittel" },
-                { id: 4, name: "Lisa Meier", status: "Krank", car: "-", trips: 12, rev: "450 €", perf: "Niedrig" },
-              ].map((driver) => (
-                <TableRow key={driver.id} className="cursor-pointer" onClick={() => navigate(`/fahrer/${driver.id}`)}>
+              {driverStats.map((driver) => (
+                <TableRow key={driver.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/fahrer/${driver.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
@@ -85,63 +114,33 @@ export function Fahrer() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={driver.status === "Aktiv" ? "success" : driver.status === "Krank" ? "destructive" : "warning"}>
-                      {driver.status}
+                    <Badge variant={driver.status === "aktiv" ? "success" : "default"}>
+                      {driver.status === "aktiv" ? "Aktiv" : "Inaktiv"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">{driver.car}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{driver.carName}</TableCell>
                   <TableCell className="text-right text-sm text-gray-600">{driver.trips}</TableCell>
-                  <TableCell className="text-right font-medium text-gray-900">{driver.rev}</TableCell>
+                  <TableCell className="text-right font-medium text-gray-900">
+                    {driver.revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Badge variant={driver.perf === "Hoch" ? "success" : driver.perf === "Mittel" ? "secondary" : "destructive"}>
+                    <Badge variant={driver.perf === "Hoch" ? "success" : driver.perf === "Mittel" ? "warning" : "default"}>
                       {driver.perf}
                     </Badge>
                   </TableCell>
                 </TableRow>
               ))}
+              {driverStats.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                    Keine Fahrer gefunden.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Sheet 
-        isOpen={isNewOpen} 
-        onClose={() => setIsNewOpen(false)} 
-        title="Neuen Fahrer anlegen"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsNewOpen(false)}>Abbrechen</Button>
-            <Button onClick={() => setIsNewOpen(false)}>Speichern</Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Vorname</label>
-            <Input placeholder="Max" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Nachname</label>
-            <Input placeholder="Müller" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Telefonnummer</label>
-            <Input type="tel" placeholder="+49 170 1234567" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">E-Mail</label>
-            <Input type="email" placeholder="max@beispiel.de" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Stammfahrzeug</label>
-            <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-              <option value="">Kein Stammfahrzeug</option>
-              <option>M-AB 1234 (V-Klasse)</option>
-              <option>M-XY 9876 (E-Klasse)</option>
-            </select>
-          </div>
-        </div>
-      </Sheet>
     </div>
   )
 }

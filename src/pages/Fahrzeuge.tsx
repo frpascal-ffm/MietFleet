@@ -1,22 +1,61 @@
-import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/Table"
 import { Badge } from "@/src/components/ui/Badge"
 import { Button } from "@/src/components/ui/Button"
-import { Input } from "@/src/components/ui/Input"
 import { Plus, Car } from "lucide-react"
-import { Sheet } from "@/src/components/ui/Sheet"
+import { useData } from "@/src/context/DataContext"
 
 export function Fahrzeuge() {
   const navigate = useNavigate()
-  const [isNewOpen, setIsNewOpen] = useState(false)
+  const { fahrzeuge, fahrten, kosten, plattformUmsaetze } = useData()
+
+  // Calculate stats per vehicle
+  const vehicleStats = fahrzeuge.map(vehicle => {
+    // Revenue from own trips
+    const ownRevenue = fahrten
+      .filter(f => f.carId === vehicle.id && f.status === 'erledigt' && f.price)
+      .reduce((sum, f) => sum + parseFloat(f.price || "0"), 0)
+
+    // Revenue from platforms
+    const platformRevenue = plattformUmsaetze
+      .filter(p => p.carId === vehicle.id)
+      .reduce((sum, p) => sum + p.amount, 0)
+
+    const totalRevenue = ownRevenue + platformRevenue
+
+    // Costs
+    const totalCosts = kosten
+      .filter(k => k.carId === vehicle.id)
+      .reduce((sum, k) => sum + parseFloat(k.amount || "0"), 0)
+
+    const profit = totalRevenue - totalCosts
+    const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0
+
+    return {
+      ...vehicle,
+      revenue: totalRevenue,
+      costs: totalCosts,
+      profit,
+      margin
+    }
+  })
+
+  const activeVehiclesCount = fahrzeuge.filter(v => v.status === 'aktiv').length
+  
+  const totalRevenueAll = vehicleStats.reduce((sum, v) => sum + v.revenue, 0)
+  const totalCostsAll = vehicleStats.reduce((sum, v) => sum + v.costs, 0)
+  const totalProfitAll = totalRevenueAll - totalCostsAll
+
+  const avgRevenue = fahrzeuge.length > 0 ? totalRevenueAll / fahrzeuge.length : 0
+  const avgCosts = fahrzeuge.length > 0 ? totalCostsAll / fahrzeuge.length : 0
+  const avgProfit = fahrzeuge.length > 0 ? totalProfitAll / fahrzeuge.length : 0
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Fahrzeuge</h1>
-        <Button onClick={() => setIsNewOpen(true)}>
+        <Button onClick={() => navigate("/fahrzeuge/neu")}>
           <Plus className="mr-2 h-4 w-4" />
           Neues Fahrzeug
         </Button>
@@ -28,7 +67,7 @@ export function Fahrzeuge() {
             <CardTitle className="text-sm font-medium text-gray-500">Aktive Fahrzeuge</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">8</div>
+            <div className="text-2xl font-bold text-gray-900">{activeVehiclesCount}</div>
             <p className="text-xs text-brand-600 mt-1">Alle im Einsatz</p>
           </CardContent>
         </Card>
@@ -37,7 +76,7 @@ export function Fahrzeuge() {
             <CardTitle className="text-sm font-medium text-gray-500">Ø Umsatz pro Fzg.</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">5.653 €</div>
+            <div className="text-2xl font-bold text-gray-900">{avgRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-gray-500 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
@@ -46,7 +85,7 @@ export function Fahrzeuge() {
             <CardTitle className="text-sm font-medium text-gray-500">Ø Kosten pro Fzg.</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">3.556 €</div>
+            <div className="text-2xl font-bold text-gray-900">{avgCosts.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-gray-500 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
@@ -55,7 +94,9 @@ export function Fahrzeuge() {
             <CardTitle className="text-sm font-medium text-brand-800">Ø Gewinn pro Fzg.</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-brand-900">2.097 €</div>
+            <div className={`text-2xl font-bold ${avgProfit >= 0 ? 'text-brand-900' : 'text-red-600'}`}>
+              {avgProfit.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            </div>
             <p className="text-xs text-brand-700 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
@@ -79,76 +120,47 @@ export function Fahrzeuge() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                { id: 1, plate: "M-AB 1234", model: "Mercedes V-Klasse", status: "Aktiv", rev: "8.450 €", cost: "5.000 €", profit: "3.450 €", margin: "40.8%" },
-                { id: 2, plate: "M-XY 9876", model: "Mercedes E-Klasse", status: "Aktiv", rev: "6.890 €", cost: "4.000 €", profit: "2.890 €", margin: "41.9%" },
-                { id: 3, plate: "M-ZZ 5555", model: "Mercedes EQV", status: "Aktiv", rev: "5.100 €", cost: "3.000 €", profit: "2.100 €", margin: "41.1%" },
-                { id: 4, plate: "M-CC 1111", model: "VW Caravelle", status: "Werkstatt", rev: "1.200 €", cost: "2.500 €", profit: "-1.300 €", margin: "-108.3%" },
-              ].map((car) => (
-                <TableRow key={car.id} className="cursor-pointer" onClick={() => navigate(`/fahrzeuge/${car.id}`)}>
+              {vehicleStats.map((car) => (
+                <TableRow key={car.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/fahrzeuge/${car.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
                         <Car className="h-4 w-4 text-gray-600" />
                       </div>
-                      <span className="font-medium text-gray-900">{car.plate}</span>
+                      <span className="font-medium text-gray-900">{car.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">{car.model}</TableCell>
+                  <TableCell className="text-sm text-gray-600">{car.brand} {car.model}</TableCell>
                   <TableCell>
-                    <Badge variant={car.status === "Aktiv" ? "success" : "destructive"}>
-                      {car.status}
+                    <Badge variant={car.status === "aktiv" ? "success" : "default"}>
+                      {car.status === "aktiv" ? "Aktiv" : "Inaktiv"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right text-sm text-gray-600">{car.rev}</TableCell>
-                  <TableCell className="text-right text-sm text-gray-600">{car.cost}</TableCell>
-                  <TableCell className="text-right font-medium text-gray-900">{car.profit}</TableCell>
-                  <TableCell className="text-right text-sm text-gray-600">{car.margin}</TableCell>
+                  <TableCell className="text-right text-sm text-gray-600">
+                    {car.revenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                  </TableCell>
+                  <TableCell className="text-right text-sm text-gray-600">
+                    {car.costs.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                  </TableCell>
+                  <TableCell className={`text-right font-medium ${car.profit >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                    {car.profit.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                  </TableCell>
+                  <TableCell className={`text-right text-sm ${car.margin >= 0 ? 'text-gray-600' : 'text-red-600'}`}>
+                    {car.margin.toFixed(1)}%
+                  </TableCell>
                 </TableRow>
               ))}
+              {vehicleStats.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                    Keine Fahrzeuge gefunden.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Sheet 
-        isOpen={isNewOpen} 
-        onClose={() => setIsNewOpen(false)} 
-        title="Neues Fahrzeug anlegen"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsNewOpen(false)}>Abbrechen</Button>
-            <Button onClick={() => setIsNewOpen(false)}>Speichern</Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Kennzeichen</label>
-            <Input placeholder="z.B. M-AB 1234" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Marke & Modell</label>
-            <Input placeholder="z.B. Mercedes V-Klasse" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Fahrzeugtyp</label>
-            <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-              <option>Van / Kleinbus</option>
-              <option>Limousine</option>
-              <option>Kombi</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Status</label>
-            <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-              <option>Aktiv</option>
-              <option>Werkstatt</option>
-              <option>Inaktiv</option>
-            </select>
-          </div>
-        </div>
-      </Sheet>
     </div>
   )
 }
