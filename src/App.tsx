@@ -19,37 +19,34 @@ import { Abrechnungen } from "./pages/Abrechnungen"
 import { Statistik } from "./pages/Statistik"
 import { Einstellungen } from "./pages/Einstellungen"
 import { DataProvider } from "./context/DataContext"
-import { FahrtenProvider } from "./context/FahrtenContext"
 
 export default function App() {
   return (
     <DataProvider>
-      <FahrtenProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="fahrten" element={<Fahrten />} />
-              <Route path="fahrten/neu" element={<FahrtNeu />} />
-              <Route path="fahrten/:id" element={<FahrtDetail />} />
-              <Route path="fahrten/:id/bearbeiten" element={<FahrtBearbeiten />} />
-              <Route path="umsaetze" element={<Umsaetze />} />
-              <Route path="fahrzeuge" element={<Fahrzeuge />} />
-              <Route path="fahrzeuge/neu" element={<FahrzeugNeu />} />
-              <Route path="fahrzeuge/:id" element={<FahrzeugDetail />} />
-              <Route path="fahrzeuge/:id/bearbeiten" element={<FahrzeugBearbeiten />} />
-              <Route path="fahrer" element={<Fahrer />} />
-              <Route path="fahrer/neu" element={<FahrerNeu />} />
-              <Route path="fahrer/:id" element={<FahrerDetail />} />
-              <Route path="fahrer/:id/bearbeiten" element={<FahrerBearbeiten />} />
-              <Route path="kosten" element={<Kosten />} />
-              <Route path="abrechnungen" element={<Abrechnungen />} />
-              <Route path="statistik" element={<Statistik />} />
-              <Route path="einstellungen" element={<Einstellungen />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </FahrtenProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="fahrten" element={<Fahrten />} />
+            <Route path="fahrten/neu" element={<FahrtNeu />} />
+            <Route path="fahrten/:id" element={<FahrtDetail />} />
+            <Route path="fahrten/:id/bearbeiten" element={<FahrtBearbeiten />} />
+            <Route path="umsaetze" element={<Umsaetze />} />
+            <Route path="fahrzeuge" element={<Fahrzeuge />} />
+            <Route path="fahrzeuge/neu" element={<FahrzeugNeu />} />
+            <Route path="fahrzeuge/:id" element={<FahrzeugDetail />} />
+            <Route path="fahrzeuge/:id/bearbeiten" element={<FahrzeugBearbeiten />} />
+            <Route path="fahrer" element={<Fahrer />} />
+            <Route path="fahrer/neu" element={<FahrerNeu />} />
+            <Route path="fahrer/:id" element={<FahrerDetail />} />
+            <Route path="fahrer/:id/bearbeiten" element={<FahrerBearbeiten />} />
+            <Route path="kosten" element={<Kosten />} />
+            <Route path="abrechnungen" element={<Abrechnungen />} />
+            <Route path="statistik" element={<Statistik />} />
+            <Route path="einstellungen" element={<Einstellungen />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </DataProvider>
   )
 }
