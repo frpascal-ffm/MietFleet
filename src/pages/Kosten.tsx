@@ -1,20 +1,52 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/Table"
 import { Badge } from "@/src/components/ui/Badge"
 import { Button } from "@/src/components/ui/Button"
 import { Input } from "@/src/components/ui/Input"
-import { Plus, Fuel, Wrench, FileText } from "lucide-react"
-import { Sheet } from "@/src/components/ui/Sheet"
+import { Plus, Fuel, Wrench, FileText, Search, Filter } from "lucide-react"
+import { useData } from "@/src/context/DataContext"
 
 export function Kosten() {
-  const [isNewOpen, setIsNewOpen] = useState(false)
+  const navigate = useNavigate()
+  const { kosten, fahrzeuge } = useData()
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState<"Alle" | "fix" | "variabel">("Alle")
+
+  const filteredKosten = kosten.filter(k => {
+    const car = fahrzeuge.find(c => c.id === k.carId)?.name || ""
+    const searchLower = searchTerm.toLowerCase()
+    
+    const matchesSearch = 
+      k.category.toLowerCase().includes(searchLower) ||
+      car.toLowerCase().includes(searchLower) ||
+      (k.notes && k.notes.toLowerCase().includes(searchLower))
+
+    const matchesType = typeFilter === "Alle" || k.type === typeFilter
+
+    return matchesSearch && matchesType
+  })
+
+  // Sort by date descending
+  filteredKosten.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const sumFix = kosten.filter(k => k.type === 'fix').reduce((sum, k) => sum + parseFloat(k.amount || "0"), 0)
+  const sumVar = kosten.filter(k => k.type === 'variabel').reduce((sum, k) => sum + parseFloat(k.amount || "0"), 0)
+  const sumTotal = sumFix + sumVar
+
+  const getIconForCategory = (category: string) => {
+    if (category === 'Sprit') return Fuel
+    if (category === 'Werkstatt') return Wrench
+    return FileText
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Kosten</h1>
-        <Button onClick={() => setIsNewOpen(true)}>
+        <Button onClick={() => navigate("/kosten/neu")}>
           <Plus className="mr-2 h-4 w-4" />
           Neue Kosten erfassen
         </Button>
@@ -26,7 +58,7 @@ export function Kosten() {
             <CardTitle className="text-sm font-medium text-gray-500">Fixkosten</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">12.450 €</div>
+            <div className="text-2xl font-bold text-gray-900">{sumFix.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-gray-500 mt-1">Leasing, Versicherung, Steuer</p>
           </CardContent>
         </Card>
@@ -35,7 +67,7 @@ export function Kosten() {
             <CardTitle className="text-sm font-medium text-gray-500">Variable Kosten</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">16.000 €</div>
+            <div className="text-2xl font-bold text-gray-900">{sumVar.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-gray-500 mt-1">Sprit, Werkstatt, Reinigung</p>
           </CardContent>
         </Card>
@@ -44,10 +76,48 @@ export function Kosten() {
             <CardTitle className="text-sm font-medium text-red-800">Gesamtkosten</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-900">28.450 €</div>
+            <div className="text-2xl font-bold text-red-900">{sumTotal.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</div>
             <p className="text-xs text-red-700 mt-1">Laufender Monat</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-1 items-center gap-4 w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input 
+              placeholder="Suchen nach Kategorie, Fahrzeug..." 
+              className="pl-9" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={typeFilter === "Alle" ? "secondary" : "outline"} 
+              onClick={() => setTypeFilter("Alle")}
+              size="sm"
+            >
+              Alle
+            </Button>
+            <Button 
+              variant={typeFilter === "fix" ? "secondary" : "outline"} 
+              onClick={() => setTypeFilter("fix")}
+              size="sm"
+            >
+              Fixkosten
+            </Button>
+            <Button 
+              variant={typeFilter === "variabel" ? "secondary" : "outline"} 
+              onClick={() => setTypeFilter("variabel")}
+              size="sm"
+            >
+              Variable Kosten
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Card>
@@ -66,82 +136,39 @@ export function Kosten() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                { id: 1, date: "10.03.2026", cat: "Sprit", desc: "Aral Tankstelle", car: "M-AB 1234", amount: "125,50 €", icon: Fuel },
-                { id: 2, date: "09.03.2026", cat: "Werkstatt", desc: "Inspektion & Ölwechsel", car: "M-XY 9876", amount: "450,00 €", icon: Wrench },
-                { id: 3, date: "05.03.2026", cat: "Leasing", desc: "Monatsrate März", car: "M-ZZ 5555", amount: "890,00 €", icon: FileText },
-                { id: 4, date: "02.03.2026", cat: "Versicherung", desc: "Monatsbeitrag", car: "Alle", amount: "1.200,00 €", icon: FileText },
-              ].map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-sm text-gray-900">{row.date}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <row.icon className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">{row.cat}</span>
-                    </div>
+              {filteredKosten.map((row) => {
+                const Icon = getIconForCategory(row.category)
+                const carName = fahrzeuge.find(c => c.id === row.carId)?.name || "Unbekannt"
+                return (
+                  <TableRow key={row.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/kosten/${row.id}/bearbeiten`)}>
+                    <TableCell className="text-sm text-gray-900">{new Date(row.date).toLocaleDateString('de-DE')}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">{row.category}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600">{row.notes || "-"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{carName}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-gray-900">
+                      {parseFloat(row.amount || "0").toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+              {filteredKosten.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    Keine Kosten gefunden.
                   </TableCell>
-                  <TableCell className="text-sm text-gray-600">{row.desc}</TableCell>
-                  <TableCell>
-                    <Badge variant={row.car === "Alle" ? "secondary" : "outline"}>
-                      {row.car}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium text-gray-900">{row.amount}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      <Sheet 
-        isOpen={isNewOpen} 
-        onClose={() => setIsNewOpen(false)} 
-        title="Neue Kosten erfassen"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsNewOpen(false)}>Abbrechen</Button>
-            <Button onClick={() => setIsNewOpen(false)}>Speichern</Button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Datum</label>
-            <Input type="date" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Kategorie</label>
-            <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-              <option>Sprit / Laden</option>
-              <option>Werkstatt / Wartung</option>
-              <option>Reinigung</option>
-              <option>Versicherung</option>
-              <option>Leasing / Finanzierung</option>
-              <option>Sonstiges</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Beschreibung</label>
-            <Input placeholder="z.B. Tanken Aral" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Fahrzeug (Optional)</label>
-            <select className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-              <option value="">Kein spezifisches Fahrzeug</option>
-              <option>M-AB 1234</option>
-              <option>M-XY 9876</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Betrag (Brutto)</label>
-            <div className="relative">
-              <Input type="number" placeholder="0.00" className="pl-8" />
-              <span className="absolute left-3 top-2.5 text-sm text-gray-500">€</span>
-            </div>
-          </div>
-        </div>
-      </Sheet>
     </div>
   )
 }

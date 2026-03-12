@@ -214,7 +214,14 @@ export function Fahrten() {
                     <TableCell className="text-sm text-gray-600">{driverName}</TableCell>
                     <TableCell className="text-sm text-gray-600">{carName}</TableCell>
                     <TableCell className="text-right font-medium text-gray-900">
-                      {fahrt.price ? `${fahrt.price} €` : "-"}
+                      {fahrt.price ? `${parseFloat(fahrt.price).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : (
+                        fahrt.status === 'erledigt' ? (
+                          <span className="text-amber-600 text-xs flex items-center justify-end gap-1">
+                            <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                            Preis fehlt
+                          </span>
+                        ) : "-"
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge 

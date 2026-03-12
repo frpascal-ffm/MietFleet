@@ -15,6 +15,8 @@ import { FahrerNeu } from "./pages/FahrerNeu"
 import { FahrerDetail } from "./pages/FahrerDetail"
 import { FahrerBearbeiten } from "./pages/FahrerBearbeiten"
 import { Kosten } from "./pages/Kosten"
+import { KostenNeu } from "./pages/KostenNeu"
+import { KostenBearbeiten } from "./pages/KostenBearbeiten"
 import { Abrechnungen } from "./pages/Abrechnungen"
 import { Statistik } from "./pages/Statistik"
 import { Einstellungen } from "./pages/Einstellungen"
@@ -41,6 +43,8 @@ export default function App() {
             <Route path="fahrer/:id" element={<FahrerDetail />} />
             <Route path="fahrer/:id/bearbeiten" element={<FahrerBearbeiten />} />
             <Route path="kosten" element={<Kosten />} />
+            <Route path="kosten/neu" element={<KostenNeu />} />
+            <Route path="kosten/:id/bearbeiten" element={<KostenBearbeiten />} />
             <Route path="abrechnungen" element={<Abrechnungen />} />
             <Route path="statistik" element={<Statistik />} />
             <Route path="einstellungen" element={<Einstellungen />} />

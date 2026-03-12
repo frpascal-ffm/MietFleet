@@ -178,6 +178,102 @@ export function FahrzeugDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle>Zugeordnete Fahrten</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate("/fahrten/neu")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Fahrt erfassen
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Typ</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Preis</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vehicleFahrten.map(f => (
+                  <TableRow key={f.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/fahrten/${f.id}`)}>
+                    <TableCell className="text-sm text-gray-900">{new Date(f.date).toLocaleDateString('de-DE')}</TableCell>
+                    <TableCell className="text-sm text-gray-600">{f.type}</TableCell>
+                    <TableCell>
+                      <Badge variant={f.status === "erledigt" ? "success" : f.status === "geplant" ? "warning" : "default"}>
+                        {f.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-gray-900">
+                      {f.price ? `${parseFloat(f.price).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {vehicleFahrten.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-gray-500">Keine Fahrten erfasst.</TableCell>
+                  </TableRow>
+                )}
+                {vehicleFahrten.length > 0 && (
+                  <TableRow className="bg-gray-50">
+                    <TableCell colSpan={3} className="text-sm font-bold text-gray-900">Umsatz Eigene Fahrten</TableCell>
+                    <TableCell className="text-right font-bold text-gray-900">
+                      {ownRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle>Plattformumsätze</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Quelle</TableHead>
+                  <TableHead className="text-right">Betrag</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vehiclePlattform.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell className="text-sm text-gray-900">{new Date(p.date).toLocaleDateString('de-DE')}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{p.source}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-gray-900">
+                      {p.amount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {vehiclePlattform.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4 text-gray-500">Keine Plattformumsätze erfasst.</TableCell>
+                  </TableRow>
+                )}
+                {vehiclePlattform.length > 0 && (
+                  <TableRow className="bg-gray-50">
+                    <TableCell colSpan={2} className="text-sm font-bold text-gray-900">Umsatz Plattformen</TableCell>
+                    <TableCell className="text-right font-bold text-gray-900">
+                      {platformRevenue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
