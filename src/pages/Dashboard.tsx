@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/Card"
 import { Badge } from "@/src/components/ui/Badge"
 import { ArrowUpRight, ArrowDownRight, TrendingUp, AlertCircle, Car, Euro, Users } from "lucide-react"
-import { useFahrten } from "@/src/context/FahrtenContext"
+import { useData } from "@/src/context/DataContext"
 
 export function Dashboard() {
-  const { fahrten } = useFahrten()
+  const { fahrten } = useData()
 
   // Calculate fahrten without price
   const fahrtenOhnePreis = fahrten.filter(f => f.status === "erledigt" && !f.price).length

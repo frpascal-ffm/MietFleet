@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/src/components/ui/Badge"
 import { Button } from "@/src/components/ui/Button"
 import { Download, Upload, Car, Smartphone, TrendingUp } from "lucide-react"
-import { useFahrten } from "@/src/context/FahrtenContext"
+import { useData } from "@/src/context/DataContext"
 
 function formatDateDisplay(dateString: string) {
   const date = new Date(dateString)
@@ -12,21 +12,20 @@ function formatDateDisplay(dateString: string) {
 }
 
 export function Umsaetze() {
-  const { fahrten } = useFahrten()
+  const { fahrten, plattformUmsaetze, fahrer, fahrzeuge } = useData()
   const [activeTab, setActiveTab] = useState<"uebersicht" | "fahrten" | "plattform">("uebersicht")
 
   // Calculate Umsätze aus Fahrten
   const umsatzFahrten = fahrten.filter(f => f.status === "erledigt" && f.price)
   const sumFahrten = umsatzFahrten.reduce((acc, curr) => acc + parseFloat(curr.price || "0"), 0)
 
-  // Mock Plattformumsätze
-  const mockPlattformUmsaetze = [
-    { id: 1, date: "09.03.2026", source: "Uber", driver: "Anna Schmidt", car: "M-XY 9876", amount: 1245.50 },
-    { id: 2, date: "09.03.2026", source: "Bolt", driver: "Tom Weber", car: "M-ZZ 5555", amount: 890.00 },
-  ]
-  const sumPlattform = mockPlattformUmsaetze.reduce((acc, curr) => acc + curr.amount, 0)
+  // Use real Plattformumsätze from DataContext
+  const sumPlattform = plattformUmsaetze.reduce((acc, curr) => acc + curr.amount, 0)
 
   const sumTotal = sumFahrten + sumPlattform
+
+  const getDriverName = (id: string) => fahrer.find(d => d.id === id)?.name || "Unbekannt"
+  const getCarName = (id: string) => fahrzeuge.find(c => c.id === id)?.name || "Unbekannt"
 
   return (
     <div className="space-y-6">
@@ -91,7 +90,7 @@ export function Umsaetze() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900">{sumPlattform.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
-                <p className="text-xs text-gray-500 mt-1">Aus {mockPlattformUmsaetze.length} Importen</p>
+                <p className="text-xs text-gray-500 mt-1">Aus {plattformUmsaetze.length} Importen</p>
               </CardContent>
             </Card>
             <Card className="bg-brand-50 border-brand-200">
@@ -131,8 +130,8 @@ export function Umsaetze() {
                     <TableRow key={row.id}>
                       <TableCell className="text-sm text-gray-900">{formatDateDisplay(row.date)}</TableCell>
                       <TableCell className="text-sm text-gray-600">{row.type}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{row.driver}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{row.car}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{getDriverName(row.driverId)}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{getCarName(row.carId)}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">Eigene Fahrt</Badge>
                       </TableCell>
@@ -169,11 +168,11 @@ export function Umsaetze() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockPlattformUmsaetze.map((row) => (
+                {plattformUmsaetze.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell className="text-sm text-gray-900">{row.date}</TableCell>
-                    <TableCell className="text-sm text-gray-600">{row.driver}</TableCell>
-                    <TableCell className="text-sm text-gray-600">{row.car}</TableCell>
+                    <TableCell className="text-sm text-gray-900">{formatDateDisplay(row.date)}</TableCell>
+                    <TableCell className="text-sm text-gray-600">{getDriverName(row.driverId)}</TableCell>
+                    <TableCell className="text-sm text-gray-600">{getCarName(row.carId)}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{row.source}</Badge>
                     </TableCell>
